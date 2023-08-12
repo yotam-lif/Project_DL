@@ -11,7 +11,7 @@ class TF:
     def __init__(self, arr):
 
         self.props = len(arr)
-        self.seq_len = len(arr[0]) - 1
+        self.seq_len = len(arr[0])-1
 
         self.disorder_score = arr[1]
         self.molw = arr[2]
