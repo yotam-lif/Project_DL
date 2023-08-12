@@ -1,9 +1,9 @@
 from torch.utils.data import Dataset, DataLoader
 import torch
 import numpy as np
-import glob
 import h5py
 
+AA_nums = 20
 DBD_nums = 26
 
 
@@ -19,7 +19,7 @@ class TF:
         self.pka = arr[4]
         self.pkb = arr[5]
         self.iso = arr[6]
-        self.seq = np.zeros((self.seq_len, 20))
+        self.seq = np.zeros((self.seq_len, AA_nums))
         # self.seq 1st axis is position in IDR, 2nd is one-hot for AA
         # Create one-hot representation, -1 vacancy tokens are left as zero arrays
         for i in range(self.seq_len):
@@ -32,15 +32,23 @@ class TF:
         self.DBD[dbd_enc] = 1
 
 
-class TFDNAds:
-    def __init__(self, path):
+class TFDNA_ds(Dataset):
+    def __init__(self, DNA_path, TF_path):
+
         # initialize TF array
-        f_TF = h5py.File('final_tf_data.h5', 'r')
+        f_TF = h5py.File(TF_path, 'r')
         dset = f_TF['final_array']
         self.num_TFs = len(dset)
         self.TF_arr = np.array(self.num_TFs)
         for i in range(self.num_TFs):
             self.TF_arr[i] = TF(dset[i])
+        # TF array initialized
+
+        # initialize DNA signal per TF
+        f_DNA = h5py.File(DNA_path, 'r')
+        # ???
+        # signal data initialized
+
 
     # def __len__(self):
     #     return len(self.label)

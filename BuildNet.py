@@ -1,4 +1,4 @@
-from dataloader import TFdataset
+from dataloader import TFDNA_ds
 
-dataset = TFdataset('final_tf_data.h5')
+dataset = TFDNA_ds(TF_path='final_tf_data.h5', DNA_path='?')
 
