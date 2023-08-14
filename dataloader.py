@@ -5,14 +5,16 @@ import h5py
 
 AA_nums = 20
 DBD_nums = 26
+DNA_window = 300
 
 
 class TF:
     def __init__(self, arr):
 
         self.props = len(arr)
-        self.seq_len = len(arr[0])-1
+        self.seq_len = len(arr[0]) - 1
 
+        self.asarray = arr
         self.disorder_score = arr[1]
         self.molw = arr[2]
         self.res_molw = arr[3]
@@ -34,7 +36,6 @@ class TF:
 
 class TFDNA_ds(Dataset):
     def __init__(self, DNA_path, TF_path):
-
         # initialize TF array
         f_TF = h5py.File(TF_path, 'r')
         dset = f_TF['final_array']
@@ -48,7 +49,6 @@ class TFDNA_ds(Dataset):
         f_DNA = h5py.File(DNA_path, 'r')
         # ???
         # signal data initialized
-
 
     # def __len__(self):
     #     return len(self.label)
