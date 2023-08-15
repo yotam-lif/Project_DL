@@ -22,7 +22,7 @@ class TF:
         self.pkb = arr[5]
         self.iso = arr[6]
         self.seq = np.zeros((self.seq_len, AA_nums))
-        # self.seq 1st axis is position in IDR, 2nd is one-hot for AA
+        # self.seq 1st axis is position, 2nd is one-hot for AA
         # Create one-hot representation, -1 vacancy tokens are left as zero arrays
         for i in range(self.seq_len):
             ind = arr[0][i]
