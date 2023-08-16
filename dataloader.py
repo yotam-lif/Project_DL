@@ -2,85 +2,12 @@ from torch.utils.data import Dataset, DataLoader
 import torch
 import numpy as np
 import h5py
+import helper_classes
 
 AA_nums = 20
 DBD_nums = 26
 DNA_window = 300
-
-
-class TF:
-    def __init__(self, arr):
-
-        self.props = len(arr)
-        self.seq_len = len(arr[0]) - 1
-
-        self.data = arr[:][0:self.seq_len]
-        self.disorder_score = arr[1]
-        self.molw = arr[2]
-        self.res_molw = arr[3]
-        self.pka = arr[4]
-        self.pkb = arr[5]
-        self.iso = arr[6]
-        self.seq = np.zeros((self.seq_len, AA_nums))
-        # self.seq 1st axis is position, 2nd is one-hot for AA
-        # Create one-hot representation, -1 vacancy tokens are left as zero arrays
-        for i in range(self.seq_len):
-            ind = arr[0][i]
-            if ind >= 0:
-                self.seq[i][ind] = 1
-
-        self.DBD = np.zeros(DBD_nums)
-        dbd_enc = arr[0][-1]
-        self.DBD[dbd_enc] = 1
-
-class DNA_fragment:
-    def __init__(self, arr):
-        
-        self.props = len(arr)
-        self.seq_len = len(arr[0])
-        self.pka= arr[1][0:self.seq_len]
-        self.molw = arr[2][0:self.seq_len]
-        self.signal = arr[3][0:self.seq_len]
-    
-        self.seq = np.zeros((self.seq_len, AA_nums))
-        # self.seq 1st axis is position in IDR, 2nd is one-hot for AA
-        # Create one-hot representation, -1 vacancy tokens are left as zero arrays
-        for i in range(self.seq_len):
-            ind = arr[0][i]
-            if ind >= 0:
-                self.seq[i][ind] = 1
-
-    
-    def getData(self):
-        #without the signal
-        data = torch.cat((self.seq,self.pka,self.molw),dim=1)
-        signal =self.signal
-        return data,signal
-
-class Chromosome:
-    def __init__(self, sequence, chrom_num,seq_length=300,sliding_window_step=1):
-        
-        fragment_length = 300
-        self.seq_length=seq_length
-        self.sliding_window_step=sliding_window_step
-        self.chrom_num = chrom_num #the number of the chromosome [1-16] for indexing purpouses
-        self.sequence = sequence #a dictionary
-        self.numfrag = np.size(list(self.sequence.keys()))
-        residual = np.size(self.sequence[getKey(self.numfrag)])
-        self.chrom_len =fragment_length*(self.numfrag-1)+residual
-    
-    def getSequence(self,TF,loc):
-        start = loc*self.sliding_window_step
-        end = start + self.seq_length
-        ind_frag_start =start//300
-        start_loc = start%300
-        ind_frag_end =start//300
-        end_loc = start%300
-        frag_start  = DNA_fragment()
-
-
-
-
+NUC_nums = 4
 
 
 class TFDNA_ds(Dataset):
@@ -121,9 +48,14 @@ class TFDNA_ds(Dataset):
         return np.sum(self.num_ind)
 
     def __getitem__(self, idx):
-
+        TF_num, chrom_num, loc_on_chrom = self.get_TF_chrom_and_loc_from_ind(
+            idx,chrom_lengths=self.chrom_lengths,seq_length=self.seq_length,sliding_window_step=self.sliding_window_step)
+        chrom = self.chromosomes[chrom_num-1]
+        data_DNA, signal = chrom.getSequenceData(TF_num,loc_on_chrom)
+        data_TF = self.TF_arr[TF_num-1].getData()
+        data =(data_TF,data_DNA)
     
-        return g, y
+        return data, signal
 
     def get_chrom_lengths(num_chroms =16, file_name = 'signal_159_TFs/DNA_data_fragments_'):
         #returns an array witht the chromosomes lengths for indexing purposes
