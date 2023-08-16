@@ -2,7 +2,7 @@ from torch.utils.data import Dataset, DataLoader
 import torch
 import numpy as np
 import h5py
-import helper_classes
+import Project_DL.helper_classes as helper_classes
 
 AA_nums = 20
 DBD_nums = 26
