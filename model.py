@@ -51,7 +51,7 @@ class EncoderNet(nn.Module):
         self.N_emb = FCN(Nuc_num + Nuc_props, [d_model * 2], d_model, dropout=dropout_emb)
         self.DBD_emb = FCN(DBD_nums, [d_model * 2], d_model, dropout=dropout_emb)
 
-        encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=n_heads, dropout=dropout_enc)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=n_heads, dropout=dropout_enc, batch_first=True)
         self.enc = nn.TransformerEncoder(encoder_layer=encoder_layer, num_layers=n_layers)
 
         self.out = nn.Linear(d_model, window_size)
@@ -78,7 +78,5 @@ class EncoderNet(nn.Module):
         # Pass through encoder and out layer
         intermediate = self.enc(embedded_inp)
         out = self.out(intermediate)
-        # we permute to obtain size (sequence length, batch_size, dim_model),
-        out = out.permute(1, 0, 2)
 
         return out
