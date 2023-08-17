@@ -1,13 +1,12 @@
 import torch
 import numpy as np
 import torch.nn as nn
-import math
 import dataloader
 
 AA_num = 20
 AA_props = 6
 Nuc_num = 4
-Nuc_props = 3
+Nuc_props = 2
 DBD_nums = 26
 
 
@@ -48,36 +47,34 @@ class EncoderNet(nn.Module):
     ):
         super().__init__()
 
-        self.AA_embedding = FCN(AA_num + AA_props, [d_model * 2], d_model, dropout=dropout_emb)
-        self.Nuc_embedding = FCN(Nuc_num + Nuc_props, [d_model * 2], d_model, dropout=dropout_emb)
-        self.DBD_embedding = FCN(DBD_nums, [d_model * 2], d_model, dropout=dropout_emb)
+        self.AA_emb = FCN(AA_num + AA_props, [d_model * 2], d_model, dropout=dropout_emb)
+        self.N_emb = FCN(Nuc_num + Nuc_props, [d_model * 2], d_model, dropout=dropout_emb)
+        self.DBD_emb = FCN(DBD_nums, [d_model * 2], d_model, dropout=dropout_emb)
 
         encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=n_heads, dropout=dropout_enc)
         self.enc = nn.TransformerEncoder(encoder_layer=encoder_layer, num_layers=n_layers)
 
         self.out = nn.Linear(d_model, window_size)
 
-    def forward(self, inp: (dataloader.Nucleotide, dataloader.TF)):
+    def forward(self, inp):
         # Src size must be (batch_size, src sequence length)
         # Embedding + positional encoding - Out size = (batch_size, sequence length, dim_model)
-        nuc_list = inp[0]
-        tf = inp[1]
+        tf = inp[0]
+        dna = inp[1]
+        dbd = inp[2]
         embedded_inp = []
 
         # start by appending embeddings of AA's (# = 1503)
-        for i in range(tf.seq_len):
-            tmp = tf.seq[i]
-
+        for aa in tf:
+            embedded_inp.append(self.AA_emb(aa))
         # now append embeddings of nucleic acids (# = window size)
-        for n in nuc_list:
-            x = self.Nuc_embedding(n)
-            embedded_inp.append(x)
-
+        for nuc in dna:
+            embedded_inp.append(self.N_emb(nuc))
         # add DBD
-        x = self.DBD_embedding(tf.DBD)
-        embedded_inp.append(x)
+        embedded_inp.append(self.DBD_emb(dbd))
+
         embedded_inp = torch.FloatTensor(embedded_inp)
-        # Now we have torch tensor of dims [length of TF + Nucleotide window size + 1 (DBD), d_model]
+        # Now we have torch tensor of dims [batch size, length of TF + Nucleotide window size + 1 (DBD), d_model]
         # Pass through encoder and out layer
         intermediate = self.enc(embedded_inp)
         out = self.out(intermediate)
