@@ -57,7 +57,6 @@ class EncoderNet(nn.Module):
         self.out = nn.Linear(d_model, window_size)
 
     def forward(self, inp):
-        # Src size must be (batch_size, src sequence length)
         # Embedding + positional encoding - Out size = (batch_size, sequence length, dim_model)
         tf = inp[0]
         dna = inp[1]
@@ -65,15 +64,18 @@ class EncoderNet(nn.Module):
         embedded_inp = []
 
         # start by appending embeddings of AA's (# = 1503)
-        for aa in tf:
-            embedded_inp.append(self.AA_emb(aa))
-        # now append embeddings of nucleic acids (# = window size)
-        for nuc in dna:
-            embedded_inp.append(self.N_emb(nuc))
-        # add DBD
-        embedded_inp.append(self.DBD_emb(dbd))
+        for i in range(len(tf)):
+            tf_ex_list = []
+            for aa in tf[i]:
+                tf_ex_list.append(self.AA_emb(aa))
+            dna_ex_list = []
+            for nuc in dna[i]:
+                dna_ex_list.append(self.N_emb(nuc))
+            dbd_ex = self.DBD_emb(dbd[i])
+            tmp = torch.FloatTensor(tf_ex_list + dna_ex_list + dbd_ex)
+            embedded_inp.append(tmp)
 
-        embedded_inp = torch.FloatTensor(embedded_inp)
+        embedded_inp = torch.cat(embedded_inp, dim=0)
         # Now we have torch tensor of dims [batch size, length of TF + Nucleotide window size + 1 (DBD), d_model]
         # Pass through encoder and out layer
         intermediate = self.enc(embedded_inp)
