@@ -7,7 +7,6 @@ from helper_classes import Chromosome as Chromosome
 
 AA_nums = 20
 DBD_nums = 26
-DNA_window = 300
 NUC_nums = 4
 
 
@@ -58,8 +57,25 @@ class TFDNA_ds(Dataset):
             sliding_window_step=self.sliding_window_step)
         data_DNA, signal = chrom.getSequenceData(loc_on_chrom)
         data_TF, DBD = self.TF_arr[TF_num - 1].getData()
-        data = (data_TF, data_DNA, DBD)
 
+        # clean signal
+        signal = torch.where(signal <= 2, 0.0, signal)
+        # clean properties of empty aa's
+        data_TF = torch.where(data_TF == -1.0, 0.0, data_TF)
+
+        data = []
+        # Now make into [1052 + window_size + 1, 26] tensor
+        for aa in data_TF.tolist():
+            data.append(aa)
+        for n in data_DNA.tolist():
+            tmp = np.zeros(len(aa))
+            for i in range(len(n)):
+                tmp[i] = n[i]
+            tmp = tmp.tolist()
+            data.append(tmp)
+        data.append(DBD.tolist())
+        # Done
+        data = torch.tensor(data)
         return data, signal
 
     def get_chrom_lengths(self, num_chroms=16, file_name='signal_159_TFs/DNA_data_fragments_', TF=1):
